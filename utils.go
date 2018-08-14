@@ -1,7 +1,6 @@
 package xcolt
 
 import (
-	"fmt"
 	"reflect"
 	"sort"
 )
@@ -43,17 +42,6 @@ func Mapper(name string) string {
 		s = append(s, r)
 	}
 	return string(s)
-}
-
-func CheckTime(dest interface{}) {
-	r := reflect.TypeOf(dest)
-	if r.Kind() != reflect.Ptr {
-		fmt.Println("value of interface{} is not a pointer")
-	} else if e := r.Elem(); !(e.PkgPath() == "time" && e.Name() == "Time") {
-		fmt.Println("value of interface{} is not *time.Time")
-	} else {
-		fmt.Println("value of interface{} is *time.Time")
-	}
 }
 
 func GetType(v interface{}) string {
