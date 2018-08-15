@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/laoqiu/sqlx-query-colt"
+	"github.com/laoqiu/sqlx-colt"
 )
 
 type Person struct {
@@ -18,13 +18,9 @@ type Person struct {
 
 func main() {
 	var db *sqlx.DB
-	db, err := sqlx.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/ml_test?charset=utf8mb4&parseTime=true")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	db, err := sqlxcolt.Connect("mysql", "root:123456@tcp(127.0.0.1:3306)/tms", "utf8mb4", true, 10, 10)
 	a := &Person{}
-	dbc := xcolt.Query{}
+	dbc := sqlxcolt.Query{}
 	err = dbc.Bind(db).Table("logs_dispatch").Distinct().
 		First(a)
 	fmt.Println(err)

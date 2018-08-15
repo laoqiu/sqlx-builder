@@ -1,4 +1,4 @@
-package xcolt
+package sqlxcolt
 
 import (
 	"database/sql"
