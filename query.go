@@ -233,7 +233,7 @@ func (q *Query) BuildExec(method string, data map[string]interface{}) (string, [
 
 func (q *Query) BuildQuery() (string, []interface{}, error) {
 	// table
-	table := Mapper(q.table)
+	table := DefaultMapper(q.table)
 	// join
 	join, joinTables, err := q.parseJoin()
 	if err != nil {
