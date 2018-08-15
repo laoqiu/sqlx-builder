@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/laoqiu/sqlx-colt"
+	sqlxcolt "github.com/laoqiu/sqlx-colt"
 )
 
 type Person struct {

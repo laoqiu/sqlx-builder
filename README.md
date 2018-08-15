@@ -1,9 +1,14 @@
-# sqlx-query-colt
+# sqlx-colt
 用于sqlx简化操作，仅完成基础的一些操作，之后想支持通过struct转table结构
 目前使用protobuf生成struct，感觉转table用处不大
 
 不使用sqlx的可以去看 gorose
 更多struct功能的可以去看 structable
+
+## 安装
+```
+go get github.com/laoqiu/sqlx-colt
+```
 
 ### 支持的链式操作
 ```
@@ -19,7 +24,8 @@ query.Bind(db).Table("tablename").Join("table2", "table2.id = table1.t_id").
     First(dest)
 ```
 
-### 支持的函数结构体
+### 支持的函数及结构体
+* Query{}
 ```
 Bind(sqlx.DB)
 BindTx(sqlx.Tx)
@@ -39,3 +45,5 @@ Delete()
 First(dest)
 All(dest)
 ```
+* Connect()
+* SetMapper()
