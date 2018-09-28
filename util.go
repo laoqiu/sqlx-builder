@@ -1,4 +1,4 @@
-package sqlxcolt
+package sqlxt
 
 import (
 	"fmt"

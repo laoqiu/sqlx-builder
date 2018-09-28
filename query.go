@@ -1,7 +1,6 @@
-package sqlxcolt
+package sqlxt
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -13,8 +12,6 @@ import (
 )
 
 type Query struct {
-	db       *sqlx.DB
-	tx       *sqlx.Tx
 	table    string
 	fields   []string
 	join     [][]interface{}
@@ -27,14 +24,8 @@ type Query struct {
 	offset   int
 }
 
-func (q *Query) Bind(db *sqlx.DB) *Query {
-	q.db = db
-	return q
-}
-
-func (q *Query) BindTx(tx *sqlx.Tx) *Query {
-	q.tx = tx
-	return q
+func NewQuery() *Query {
+	return &Query{}
 }
 
 func (q *Query) Table(table string) *Query {
@@ -90,75 +81,6 @@ func (q *Query) Limit(n int) *Query {
 func (q *Query) Offset(n int) *Query {
 	q.offset = n
 	return q
-}
-
-func (q *Query) First(dest interface{}) error {
-	q.Limit(1)
-	query, args, err := q.BuildQuery()
-	if err != nil {
-		return err
-	}
-	var row *sqlx.Row
-	if q.tx != nil {
-		row = q.tx.Unsafe().QueryRowx(query, args...)
-	} else {
-		row = q.db.Unsafe().QueryRowx(query, args...)
-	}
-	if err := row.StructScan(dest); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (q *Query) All(dest interface{}) error {
-	var err error
-	query, args, err := q.BuildQuery()
-	if err != nil {
-		return err
-	}
-	var rows *sqlx.Rows
-	if q.tx != nil {
-		rows, err = q.tx.Unsafe().Queryx(query, args...)
-	} else {
-		rows, err = q.db.Unsafe().Queryx(query, args...)
-	}
-	if err != nil {
-		return err
-	}
-	if err := rows.StructScan(dest); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (q *Query) Update(data map[string]interface{}) (sql.Result, error) {
-	return q.Exec("update", data)
-}
-
-func (q *Query) Insert(data map[string]interface{}) (sql.Result, error) {
-	return q.Exec("insert", data)
-}
-
-func (q *Query) Delete() (sql.Result, error) {
-	return q.Exec("delete", nil)
-}
-
-func (q *Query) Exec(method string, data map[string]interface{}) (sql.Result, error) {
-	var err error
-	query, args, err := q.BuildExec(method, data)
-	if err != nil {
-		return nil, err
-	}
-	var result sql.Result
-	if q.tx != nil {
-		result, err = q.tx.Exec(query, args...)
-	} else {
-		result, err = q.db.Exec(query, args...)
-	}
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
 }
 
 func (q *Query) _parseInsert(data map[string]interface{}) (string, string) {

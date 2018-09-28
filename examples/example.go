@@ -2,11 +2,9 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 
-	"github.com/jmoiron/sqlx"
-	sqlxcolt "github.com/laoqiu/sqlx-colt"
+	"github.com/laoqiu/sqlxt"
 )
 
 type Person struct {
@@ -17,11 +15,8 @@ type Person struct {
 }
 
 func main() {
-	var db *sqlx.DB
-	db, err := sqlxcolt.Connect("mysql", "root:123456@tcp(127.0.0.1:3306)/tms", "utf8mb4", true, 10, 10)
-	a := &Person{}
-	dbc := sqlxcolt.Query{}
-	err = dbc.Bind(db).Table("logs_dispatch").Distinct().
-		First(a)
-	fmt.Println(err)
+	db, _ := sqlxt.Connect("mysql", "root:123456@tcp(127.0.0.1:3306)/tms", "utf8mb4", true, 10, 10)
+	person := &Person{}
+	query := sqlxt.NewQuery().Table("logs_dispatch").Distinct()
+	sqlxt.New(db, query).Get(person)
 }
