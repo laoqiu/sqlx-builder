@@ -10,6 +10,40 @@
 go get github.com/laoqiu/sqlxt
 ```
 
+### 初始化Init函数，允许传入option (在获取flag时更新db的参数)
+
+```
+file: db.go
+var (
+	db *sqlx.DB
+)
+
+func Init(opts ...sqlxt.Option) error {
+	o := sqlxt.NewOptions(opts...)
+	db, err := sqlxt.Connect(o.Driver, o.URI, o.Charset, o.ParseTime, o.MaxClient, o.MaxClient)
+	if err != nil {
+		return err
+	}
+	// 加载mapper
+	sqlxt.LoadMapper(db, sqlxt.DefaultMapper)
+	return nil
+}
+
+file: main.go
+func main() {
+	dbOpts := []sqlxt.Option{}
+	service := micro.NewService(
+        ...
+	dbOpts = append(dbOpts, sqlxt.URI(c.String("database_url")))
+	...
+	)
+	// db init
+	if err := db.Init(dbOpts...); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
 ### 支持的链式操作
 ```
 dest := &Person{}
