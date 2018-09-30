@@ -24,13 +24,10 @@ type Query struct {
 	offset   int
 }
 
-func NewQuery() *Query {
-	return &Query{}
-}
-
-func (q *Query) Table(table string) *Query {
-	q.table = table
-	return q
+func Table(tablename string) *Query {
+	return &Query{
+		table: tablename,
+	}
 }
 
 func (q *Query) Select(fields ...string) *Query {
@@ -87,18 +84,20 @@ func (q *Query) _parseInsert(data map[string]interface{}) (string, string) {
 	var keystr, valstr string
 	var key, val []string
 	for k, v := range data {
-		key = append(key, k)
-		var _value string
-		// 反射找出类型
-		switch v.(type) {
-		case int, int32, int64:
-			_value = fmt.Sprintf("%d", v)
-		case float32, float64:
-			_value = fmt.Sprintf("%f", v)
-		default:
-			_value = fmt.Sprintf("'%s'", v)
+		if len(q.fields) == 0 || indexOf(k, q.fields) != -1 {
+			key = append(key, k)
+			var _value string
+			// 反射找出类型
+			switch v.(type) {
+			case int, int32, int64:
+				_value = fmt.Sprintf("%d", v)
+			case float32, float64:
+				_value = fmt.Sprintf("%f", v)
+			default:
+				_value = fmt.Sprintf("'%s'", v)
+			}
+			val = append(val, _value)
 		}
-		val = append(val, _value)
 	}
 	keystr = strings.Join(key, ", ")
 	valstr = strings.Join(val, ", ")
@@ -110,17 +109,19 @@ func (q *Query) _parseUpate(data map[string]interface{}) string {
 	var result []string
 
 	for k, v := range data {
-		var _value string
-		// 反射找出类型
-		switch v.(type) {
-		case int, int32, int64:
-			_value = fmt.Sprintf("%s = %d", k, v)
-		case float32, float64:
-			_value = fmt.Sprintf("%s = %f", k, v)
-		default:
-			_value = fmt.Sprintf("%s = '%s'", k, v)
+		if len(q.fields) == 0 || indexOf(k, q.fields) != -1 {
+			var _value string
+			// 反射找出类型
+			switch v.(type) {
+			case int, int32, int64:
+				_value = fmt.Sprintf("%s = %d", k, v)
+			case float32, float64:
+				_value = fmt.Sprintf("%s = %f", k, v)
+			default:
+				_value = fmt.Sprintf("%s = '%s'", k, v)
+			}
+			result = append(result, _value)
 		}
-		result = append(result, _value)
 	}
 
 	setstr = strings.Join(result, ", ")
@@ -140,13 +141,18 @@ func (q *Query) BuildExec(method string, data map[string]interface{}) (string, [
 	where = If(where == "", "", "WHERE "+where).(string)
 
 	switch method {
-	case "insert":
+	case "INSERT", "INSERT_IGNORE":
 		keystr, valstr := q._parseInsert(data)
-		sqlstr = fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", tablename, keystr, valstr)
-	case "update":
+		ignore := If(method == "INSERT_IGNORE", "IGNORE", "").(string)
+		sqlstr = fmt.Sprintf("INSERT %s INTO %s (%s) VALUES (%s)", ignore, tablename, keystr, valstr)
+	case "INSERT_ON_DUPLICATE_UPDATE":
+		keystr, valstr := q._parseInsert(data)
+		setstr := q._parseUpate(data)
+		sqlstr = fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s", tablename, keystr, valstr, setstr)
+	case "UPDATE":
 		setstr := q._parseUpate(data)
 		sqlstr = fmt.Sprintf("UPDATE %s SET %s %s", tablename, setstr, where)
-	case "delete":
+	case "DELETE":
 		sqlstr = fmt.Sprintf("DELETE FROM %s %s", tablename, where)
 	}
 

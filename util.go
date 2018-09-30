@@ -70,3 +70,26 @@ func LoadMapper(db *sqlx.DB, mapper func(name string) string) {
 	// 使用`sqlx.Named`时生效
 	sqlx.NameMapper = mapper
 }
+
+func indexOf(element string, data []string) int {
+	for k, v := range data {
+		if element == v {
+			return k
+		}
+	}
+	return -1
+}
+
+// StructToMap struct转map
+func StructToMap(i interface{}) map[string]interface{} {
+	values := make(map[string]interface{})
+	iVal := reflect.ValueOf(i).Elem()
+	tp := iVal.Type()
+	for i := 0; i < iVal.NumField(); i++ {
+		tag := tp.Field(i).Tag.Get("json")
+		if len(tag) > 0 {
+			values[tag] = iVal.Field(i).Interface()
+		}
+	}
+	return values
+}

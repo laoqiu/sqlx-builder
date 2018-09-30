@@ -50,7 +50,7 @@ dest := &Person{}
 p := map[string]interface{}{
     "phone": "13012345678",
 }
-query = sqlxt.NewQuery().Table("tablename").Join("table2", "table2.id = table1.t_id").
+query = sqlxt.Table("tablename").Join("table2", "table2.id = table1.t_id").
     Where("name like ?", "%name%").
     Where("address = ?", "test").
     Where("phone = :phone", p)
@@ -65,16 +65,15 @@ if err != nil {
 ```
 func New(*sqlx.DB, *Query) *Sqlxt
 func NewTx(*sqlx.Tx, *Query) *Sqlxt
-func (st *Sqlxt) Insert(data) error
-func (st *Sqlxt) Update(data) error
+func (st *Sqlxt) Insert(data interface{}) error
+func (st *Sqlxt) Update(data interface{}) error
 func (st *Sqlxt) Delete() error
-func (st *Sqlxt) Get(dest) (sql.Result, error)
-func (st *Sqlxt) All(dest) (sql.Result, error)
+func (st *Sqlxt) Get(dest interface{}) (sql.Result, error)
+func (st *Sqlxt) All(dest interface{}) (sql.Result, error)
 ```
 * Query
 ```
-func NewQuery() *Query
-func (q *Query) Table(tablename) *Query
+func Table(tablename) *Query
 func (q *Query) Distinct() *Query
 func (q *Query) Select(...fields) *Query
 func (q *Query) Join(table, condition, label) *Query

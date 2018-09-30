@@ -59,21 +59,29 @@ func (st *Sqlxt) All(dest interface{}) error {
 	return rows.StructScan(dest)
 }
 
-func (st *Sqlxt) Update(data map[string]interface{}) (sql.Result, error) {
-	return st.Exec("update", data)
+func (st *Sqlxt) Update(data interface{}) (sql.Result, error) {
+	return st.Exec("UPDATE", data)
 }
 
-func (st *Sqlxt) Insert(data map[string]interface{}) (sql.Result, error) {
-	return st.Exec("insert", data)
+func (st *Sqlxt) Insert(data interface{}) (sql.Result, error) {
+	return st.Exec("INSERT", data)
+}
+
+func (st *Sqlxt) InsertIgnore(data interface{}) (sql.Result, error) {
+	return st.Exec("INSERT_IGNORE", data)
+}
+
+func (st *Sqlxt) InsertOnDuplicateUpdate(data interface{}) (sql.Result, error) {
+	return st.Exec("INSERT_ON_DUPLICATE_UPDATE", data)
 }
 
 func (st *Sqlxt) Delete() (sql.Result, error) {
-	return st.Exec("delete", nil)
+	return st.Exec("DELETE", nil)
 }
 
-func (st *Sqlxt) Exec(method string, data map[string]interface{}) (sql.Result, error) {
+func (st *Sqlxt) Exec(method string, s interface{}) (sql.Result, error) {
 	var err error
-	query, args, err := st.query.BuildExec(method, data)
+	query, args, err := st.query.BuildExec(method, StructToMap(s))
 	if err != nil {
 		return nil, err
 	}
