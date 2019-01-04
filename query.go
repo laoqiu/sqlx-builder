@@ -30,13 +30,23 @@ func Table(tablename string) *Query {
 	}
 }
 
-func (q *Query) Select(fields ...string) *Query {
+func (q *Query) Fields(fields ...string) *Query {
 	q.fields = fields
 	return q
 }
 
-func (q *Query) AddSelect(fields ...string) *Query {
+func (q *Query) AddFields(fields ...string) *Query {
 	q.fields = append(q.fields, fields...)
+	return q
+}
+
+func (q *Query) Select(fields ...string) *Query {
+	q.Fields(fields...)
+	return q
+}
+
+func (q *Query) AddSelect(fields ...string) *Query {
+	q.AddFields(fields...)
 	return q
 }
 
@@ -65,6 +75,16 @@ func (q *Query) Where(query string, args ...interface{}) *Query {
 	return q
 }
 
+func (q *Query) GroupBy(group string) *Query {
+	q.group = group
+	return q
+}
+
+func (q *Query) OrderBy(order string) *Query {
+	q.order = order
+	return q
+}
+
 func (q *Query) Distinct() *Query {
 	q.distinct = true
 	return q
@@ -85,18 +105,16 @@ func (q *Query) _parseInsert(data map[string]interface{}) (string, string) {
 	var key, val []string
 	for k, v := range data {
 		if len(q.fields) == 0 || indexOf(k, q.fields) != -1 {
-			key = append(key, k)
-			var _value string
 			// 反射找出类型
 			switch v.(type) {
-			case int, int32, int64:
-				_value = fmt.Sprintf("%d", v)
-			case float32, float64:
-				_value = fmt.Sprintf("%f", v)
+			case string:
+				key = append(key, k)
+				val = append(val, fmt.Sprintf("'%s'", v))
+			case int, int8, int32, int64, float32, float64, bool:
+				key = append(key, k)
+				val = append(val, fmt.Sprintf("%v", v))
 			default:
-				_value = fmt.Sprintf("'%s'", v)
 			}
-			val = append(val, _value)
 		}
 	}
 	keystr = strings.Join(key, ", ")
@@ -155,7 +173,7 @@ func (q *Query) BuildExec(method string, data map[string]interface{}) (string, [
 	case "DELETE":
 		sqlstr = fmt.Sprintf("DELETE FROM %s %s", tablename, where)
 	}
-
+	//log.Println("sql output ->", sqlstr)
 	return sqlstr, args, nil
 }
 
@@ -226,8 +244,8 @@ func (q *Query) parseJoin() (string, []string, error) {
 			w = fmt.Sprintf("%s ON %s", args[0].(string), args[1].(string))
 			joinTables = append(joinTables, args[0].(string))
 		case 3:
-			w = fmt.Sprintf("%s ON %s AS %s", args[0].(string), args[1].(string), args[2].(string))
-			joinTables = append(joinTables, args[2].(string))
+			w = fmt.Sprintf("%s AS %s ON %s", args[0].(string), args[1].(string), args[2].(string))
+			joinTables = append(joinTables, args[1].(string))
 		default:
 			return "", nil, errors.New("join format error")
 		}

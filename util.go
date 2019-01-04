@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -88,7 +89,10 @@ func StructToMap(i interface{}) map[string]interface{} {
 	for i := 0; i < iVal.NumField(); i++ {
 		tag := tp.Field(i).Tag.Get("json")
 		if len(tag) > 0 {
-			values[tag] = iVal.Field(i).Interface()
+			name := strings.Split(tag, ",")[0]
+			if name != "-" {
+				values[name] = iVal.Field(i).Interface()
+			}
 		}
 	}
 	return values

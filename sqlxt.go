@@ -47,16 +47,12 @@ func (st *Sqlxt) All(dest interface{}) error {
 	if err != nil {
 		return err
 	}
-	var rows *sqlx.Rows
 	if st.tx != nil {
-		rows, err = st.tx.Unsafe().Queryx(query, args...)
+		err = st.tx.Unsafe().Select(dest, query, args...)
 	} else {
-		rows, err = st.db.Unsafe().Queryx(query, args...)
+		err = st.db.Unsafe().Select(dest, query, args...)
 	}
-	if err != nil {
-		return err
-	}
-	return rows.StructScan(dest)
+	return err
 }
 
 func (st *Sqlxt) Update(data interface{}) (sql.Result, error) {
