@@ -2,27 +2,31 @@ package sqlxt
 
 import (
 	"database/sql"
+	"log"
 
 	"github.com/jmoiron/sqlx"
 )
 
 type Sqlxt struct {
+	debug bool
 	db    *sqlx.DB
 	tx    *sqlx.Tx
 	query *Query
 }
 
-func New(db *sqlx.DB, q *Query) *Sqlxt {
+func New(db *sqlx.DB, q *Query, debug bool) *Sqlxt {
 	return &Sqlxt{
 		db:    db,
 		query: q,
+		debug: debug,
 	}
 }
 
-func NewTx(tx *sqlx.Tx, q *Query) *Sqlxt {
+func NewTx(tx *sqlx.Tx, q *Query, debug bool) *Sqlxt {
 	return &Sqlxt{
 		tx:    tx,
 		query: q,
+		debug: debug,
 	}
 }
 
@@ -31,6 +35,9 @@ func (st *Sqlxt) Get(dest interface{}) error {
 	query, args, err := st.query.BuildQuery()
 	if err != nil {
 		return err
+	}
+	if st.debug {
+		log.Printf("sql output:\nquery: %v\n args: %v\n", query, args)
 	}
 	var row *sqlx.Row
 	if st.tx != nil {
@@ -46,6 +53,9 @@ func (st *Sqlxt) All(dest interface{}) error {
 	query, args, err := st.query.BuildQuery()
 	if err != nil {
 		return err
+	}
+	if st.debug {
+		log.Printf("sql output:\nquery: %v\n args: %v\n", query, args)
 	}
 	if st.tx != nil {
 		err = st.tx.Unsafe().Select(dest, query, args...)
@@ -80,6 +90,9 @@ func (st *Sqlxt) Exec(method string, s interface{}) (sql.Result, error) {
 	query, args, err := st.query.BuildExec(method, StructToMap(s))
 	if err != nil {
 		return nil, err
+	}
+	if st.debug {
+		log.Printf("sql output:\nquery: %v\n args: %v\n", query, args)
 	}
 	var result sql.Result
 	if st.tx != nil {

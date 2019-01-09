@@ -50,11 +50,12 @@ dest := &Person{}
 p := map[string]interface{}{
     "phone": "13012345678",
 }
+debug := true
 query = sqlxt.Table("tablename").Join("table2", "table2.id = table1.t_id").
     Where("name like ?", "%name%").
     Where("address = ?", "test").
     Where("phone = :phone", p)
-err := sqlxt.New(db, query).First(dest)
+err := sqlxt.New(db, query, debug).First(dest)
 if err != nil {
     log.Println(err) 
 }
@@ -63,8 +64,8 @@ if err != nil {
 ### 支持的函数及结构体
 * Sqlxt
 ```
-func New(*sqlx.DB, *Query) *Sqlxt
-func NewTx(*sqlx.Tx, *Query) *Sqlxt
+func New(*sqlx.DB, *Query, debug bool) *Sqlxt
+func NewTx(*sqlx.Tx, *Query, debug bool) *Sqlxt
 func (st *Sqlxt) Insert(data interface{}) error
 func (st *Sqlxt) Update(data interface{}) error
 func (st *Sqlxt) Delete() error

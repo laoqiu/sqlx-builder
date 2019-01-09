@@ -3,7 +3,6 @@ package sqlxt
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -220,7 +219,7 @@ func (q *Query) BuildQuery() (string, []interface{}, error) {
 	sqlstr := strings.Join(Filter([]string{
 		"SELECT", distinct, fields, "FROM", table, join, where, group, having, order, limit, offset},
 		func(x string) bool { return x != "" }), " ")
-	log.Println("sql output ->", sqlstr)
+	//log.Println("sql output ->", sqlstr)
 	return sqlstr, args, nil
 }
 

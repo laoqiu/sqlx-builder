@@ -34,9 +34,9 @@ func NewOptions(opts ...Option) Options {
 	return opt
 }
 
-func Driver(n string) Option {
+func Driver(v string) Option {
 	return func(o *Options) {
-		o.Driver = n
+		o.Driver = v
 	}
 }
 
