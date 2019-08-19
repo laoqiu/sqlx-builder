@@ -21,12 +21,23 @@ type Query struct {
 	having   string
 	limit    int
 	offset   int
+	lock     string
 }
 
 func Table(tablename string) *Query {
 	return &Query{
 		table: tablename,
 	}
+}
+
+func (q *Query) LockInShareMode() *Query {
+	q.lock = "LOCK IN SHARE MODE"
+	return q
+}
+
+func (q *Query) LockForUpdate() *Query {
+	q.lock = "FOR UPDATE"
+	return q
 }
 
 func (q *Query) Fields(fields ...string) *Query {
@@ -217,9 +228,9 @@ func (q *Query) BuildQuery() (string, []interface{}, error) {
 	offset := If(q.offset == 0, "", fmt.Sprintf("OFFSET %d", q.offset)).(string)
 	// 组合
 	sqlstr := strings.Join(Filter([]string{
-		"SELECT", distinct, fields, "FROM", table, join, where, group, having, order, limit, offset},
+		"SELECT", distinct, fields, "FROM", table, join, where, group, having, order, limit, offset, q.lock},
 		func(x string) bool { return x != "" }), " ")
-	//log.Println("sql output ->", sqlstr)
+	// log.Println("sql output ->", sqlstr)
 	return sqlstr, args, nil
 }
 
