@@ -9,14 +9,17 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+// Max 最大值
 func Max(n ...int) int {
 	return sort.IntSlice(n)[0]
 }
 
+// Min 最小值
 func Min(n ...int) int {
 	return sort.IntSlice(n)[len(n)-1]
 }
 
+// If 判断对象
 func If(condition bool, v1 interface{}, v2 interface{}) interface{} {
 	if condition {
 		return v1
@@ -24,6 +27,7 @@ func If(condition bool, v1 interface{}, v2 interface{}) interface{} {
 	return v2
 }
 
+// Filter 过滤器
 func Filter(iter []string, f func(x string) bool) []string {
 	result := []string{}
 	for _, i := range iter {
@@ -49,19 +53,24 @@ func DefaultMapper(name string) string {
 	return string(s)
 }
 
+// GetType 反射取属性名
 func GetType(v interface{}) string {
 	return reflect.TypeOf(v).Name()
 }
 
 // Connect 获得数据库连接
-func Connect(driver, uri, charset string, parseTime bool, maxOpen, maxIdel int) (*sqlx.DB, error) {
-	db, err := sqlx.Connect(driver, fmt.Sprintf("%s?charset=%s&parseTime=%v", uri, charset, parseTime))
+func Connect(opts ...Option) (*sqlx.DB, error) {
+	o := NewOptions(opts...)
+	if o.Driver == "mysql" {
+		o.URI = fmt.Sprintf("%s?charset=%s&parseTime=%v", o.URI, o.Charset, o.ParseTime)
+	}
+	db, err := sqlx.Connect(o.Driver, o.URI)
 	if err != nil {
 		return nil, err
 	}
 	// 配置连接池
-	db.SetMaxOpenConns(maxOpen)
-	db.SetMaxIdleConns(maxIdel)
+	db.SetMaxOpenConns(o.MaxClient)
+	db.SetMaxIdleConns(o.MaxClient)
 	return db, nil
 }
 
