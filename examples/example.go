@@ -2,21 +2,24 @@ package main
 
 import (
 	"database/sql"
+	"log"
 	"time"
 
-	"github.com/laoqiu/sqlx-builder"
+	sqlxb "github.com/laoqiu/sqlx-builder"
 )
 
+// Person 用户对象
 type Person struct {
-	ID      int64  `db:"id" tbl:"PRIMARY_KEY AUTO_INCREMENT"`
-	Name    string `tbl:"INDEX"`
-	Address sql.NullString
-	Created *time.Time
+	ID      int64          `json:"id"`
+	Name    string         `json:"name"`
+	Address sql.NullString `json:"address"`
+	Created *time.Time     `json:"created"`
 }
 
 func main() {
-	db, _ := sqlxt.Connect("mysql", "root:123456@tcp(127.0.0.1:3306)/tms", "utf8mb4", true, 10, 10)
+	db, _ := sqlxb.Connect()
 	person := &Person{}
-	query := sqlxt.Table("logs_dispatch").Distinct()
-	sqlxt.New(db, query).Get(person)
+	if err := sqlxb.New(db).Table("person").Distinct().Get(person); err != nil {
+		log.Fatal(err)
+	}
 }

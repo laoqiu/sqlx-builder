@@ -10,6 +10,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+// Builder 返回sqlx的builder
 type Builder struct {
 	debug bool
 	db    *sqlx.DB
@@ -17,91 +18,97 @@ type Builder struct {
 	query *Query
 }
 
-func New(db *sqlx.DB, q *Query, debug bool) *Builder {
+// New 返回普通模式
+func New(db *sqlx.DB) *Builder {
 	return &Builder{
-		db:    db,
-		query: q,
-		debug: debug,
+		db: db,
 	}
 }
 
-func NewTx(tx *sqlx.Tx, q *Query, debug bool) *Builder {
+// NewTx 事务模式
+func NewTx(tx *sqlx.Tx) *Builder {
 	return &Builder{
-		tx:    tx,
-		query: q,
-		debug: debug,
+		tx: tx,
 	}
 }
 
-func (st *Builder) Get(dest interface{}) error {
-	st.query.Limit(1)
-	query, args, err := st.query.BuildQuery()
+// Get 返回单条数据结果
+func (b *Builder) Get(dest interface{}) error {
+	b.Limit(1)
+	query, args, err := b.BuildQuery()
 	if err != nil {
 		return err
 	}
-	if st.debug {
+	if b.debug {
 		log.Printf("sql output:\nquery: %v\n args: %v\n", query, args)
 	}
 	var row *sqlx.Row
-	if st.tx != nil {
-		row = st.tx.Unsafe().QueryRowx(query, args...)
+	if b.tx != nil {
+		row = b.tx.Unsafe().QueryRowx(query, args...)
 	} else {
-		row = st.db.Unsafe().QueryRowx(query, args...)
+		row = b.db.Unsafe().QueryRowx(query, args...)
 	}
 	return row.StructScan(dest)
 }
 
-func (st *Builder) All(dest interface{}) error {
+// All 返回列表查询结果
+func (b *Builder) All(dest interface{}) error {
 	var err error
-	query, args, err := st.query.BuildQuery()
+	query, args, err := b.BuildQuery()
 	if err != nil {
 		return err
 	}
-	if st.debug {
+	if b.debug {
 		log.Printf("sql output:\nquery: %v\n args: %v\n", query, args)
 	}
-	if st.tx != nil {
-		err = st.tx.Unsafe().Select(dest, query, args...)
+	if b.tx != nil {
+		err = b.tx.Unsafe().Select(dest, query, args...)
 	} else {
-		err = st.db.Unsafe().Select(dest, query, args...)
+		err = b.db.Unsafe().Select(dest, query, args...)
 	}
 	return err
 }
 
-func (st *Builder) Update(data interface{}) (sql.Result, error) {
-	return st.Exec("UPDATE", data)
+// Update 执行 UPDATE 语句
+func (b *Builder) Update(data interface{}) (sql.Result, error) {
+	return b.Exec("UPDATE", data)
 }
 
-func (st *Builder) Insert(data interface{}) (sql.Result, error) {
-	return st.Exec("INSERT", data)
+// Insert 执行 INSERT 语句
+func (b *Builder) Insert(data interface{}) (sql.Result, error) {
+	return b.Exec("INSERT", data)
 }
 
-func (st *Builder) InsertIgnore(data interface{}) (sql.Result, error) {
-	return st.Exec("INSERT_IGNORE", data)
+// InsertIgnore 执行 INSERT_IGNORE 语句
+func (b *Builder) InsertIgnore(data interface{}) (sql.Result, error) {
+	return b.Exec("INSERT_IGNORE", data)
 }
 
-func (st *Builder) InsertOnDuplicateUpdate(data interface{}) (sql.Result, error) {
-	return st.Exec("INSERT_ON_DUPLICATE_UPDATE", data)
+// InsertOnDuplicateUpdate 执行 INSERT_ON_DUPLICATE_UPDATE 语言
+func (b *Builder) InsertOnDuplicateUpdate(data interface{}) (sql.Result, error) {
+	return b.Exec("INSERT_ON_DUPLICATE_UPDATE", data)
 }
 
-func (st *Builder) Delete() (sql.Result, error) {
-	return st.Exec("DELETE", nil)
+// Delete 执行 DELETE 语言
+func (b *Builder) Delete() (sql.Result, error) {
+	return b.Exec("DELETE", nil)
 }
 
-func (st *Builder) Exec(method string, s interface{}) (sql.Result, error) {
+// Exec 执行sql语句
+func (b *Builder) Exec(method string, s interface{}) (sql.Result, error) {
 	var err error
-	query, args, err := st.query.BuildExec(method, StructToMap(s))
+	query, args, err := b.BuildExec(method, StructToMap(s))
 	if err != nil {
 		return nil, err
 	}
-	if st.debug {
+	if b.debug {
 		log.Printf("sql output:\nquery: %v\n args: %v\n", query, args)
 	}
 	var result sql.Result
-	if st.tx != nil {
-		result, err = st.tx.Exec(query, args...)
+	if b.tx != nil {
+		result, err = b.tx.Exec(query, args...)
 	} else {
-		result, err = st.db.Exec(query, args...)
+		result, err = b.db.Exec(query, args...)
 	}
 	if err != nil {
 		return nil, err

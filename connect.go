@@ -9,6 +9,22 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+// Connect 获得数据库连接
+func Connect(opts ...Option) (*sqlx.DB, error) {
+	o := NewOptions(opts...)
+	if o.Driver == "mysql" {
+		o.URI = fmt.Sprintf("%s?charset=%s&parseTime=%v", o.URI, o.Charset, o.ParseTime)
+	}
+	db, err := sqlx.Connect(o.Driver, o.URI)
+	if err != nil {
+		return nil, err
+	}
+	// 配置连接池
+	db.SetMaxOpenConns(o.MaxClient)
+	db.SetMaxIdleConns(o.MaxClient)
+	return db, nil
+}
+
 // Max 最大值
 func Max(n ...int) int {
 	return sort.IntSlice(n)[0]
@@ -58,36 +74,11 @@ func GetType(v interface{}) string {
 	return reflect.TypeOf(v).Name()
 }
 
-// Connect 获得数据库连接
-func Connect(opts ...Option) (*sqlx.DB, error) {
-	o := NewOptions(opts...)
-	if o.Driver == "mysql" {
-		o.URI = fmt.Sprintf("%s?charset=%s&parseTime=%v", o.URI, o.Charset, o.ParseTime)
-	}
-	db, err := sqlx.Connect(o.Driver, o.URI)
-	if err != nil {
-		return nil, err
-	}
-	// 配置连接池
-	db.SetMaxOpenConns(o.MaxClient)
-	db.SetMaxIdleConns(o.MaxClient)
-	return db, nil
-}
-
 // LoadMapper 全局替换mapper
 func LoadMapper(db *sqlx.DB, mapper func(name string) string) {
 	db.MapperFunc(mapper)
 	// 使用`sqlx.Named`时生效
 	sqlx.NameMapper = mapper
-}
-
-func indexOf(element string, data []string) int {
-	for k, v := range data {
-		if element == v {
-			return k
-		}
-	}
-	return -1
 }
 
 // StructToMap struct转map
@@ -107,4 +98,13 @@ func StructToMap(i interface{}) map[string]interface{} {
 		}
 	}
 	return values
+}
+
+func indexOf(element string, data []string) int {
+	for k, v := range data {
+		if element == v {
+			return k
+		}
+	}
+	return -1
 }
