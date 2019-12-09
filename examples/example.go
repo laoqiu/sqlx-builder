@@ -17,9 +17,9 @@ type Person struct {
 }
 
 func main() {
-	db, _ := sqlxb.Connect()
+	db, _ := sqlxb.Connect() // 返回*sqlx.DB对象
 	person := &Person{}
-	if err := sqlxb.New(db).Table("person").Distinct().Get(person); err != nil {
+	if err := sqlxb.New(db).Debug(true).Table("person").Distinct().Get(person); err != nil {
 		log.Fatal(err)
 	}
 }

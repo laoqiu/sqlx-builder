@@ -32,6 +32,12 @@ func NewTx(tx *sqlx.Tx) *Builder {
 	}
 }
 
+// Debug 设置debug为true
+func (b *Builder) Debug(debug bool) *Builder {
+	b.debug = debug
+	return b
+}
+
 // Get 返回单条数据结果
 func (b *Builder) Get(dest interface{}) error {
 	b.Limit(1)
