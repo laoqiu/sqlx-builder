@@ -1,39 +1,39 @@
-package sqlxt
+package sqlxb
 
 import (
 	"database/sql"
 	"log"
 
-	_ "github.com/go-sql-driver/mysql"
+	// _ "github.com/go-sql-driver/mysql"
 	//_ "github.com/mattn/go-sqlite3"
 
 	"github.com/jmoiron/sqlx"
 )
 
-type Sqlxt struct {
+type Builder struct {
 	debug bool
 	db    *sqlx.DB
 	tx    *sqlx.Tx
 	query *Query
 }
 
-func New(db *sqlx.DB, q *Query, debug bool) *Sqlxt {
-	return &Sqlxt{
+func New(db *sqlx.DB, q *Query, debug bool) *Builder {
+	return &Builder{
 		db:    db,
 		query: q,
 		debug: debug,
 	}
 }
 
-func NewTx(tx *sqlx.Tx, q *Query, debug bool) *Sqlxt {
-	return &Sqlxt{
+func NewTx(tx *sqlx.Tx, q *Query, debug bool) *Builder {
+	return &Builder{
 		tx:    tx,
 		query: q,
 		debug: debug,
 	}
 }
 
-func (st *Sqlxt) Get(dest interface{}) error {
+func (st *Builder) Get(dest interface{}) error {
 	st.query.Limit(1)
 	query, args, err := st.query.BuildQuery()
 	if err != nil {
@@ -51,7 +51,7 @@ func (st *Sqlxt) Get(dest interface{}) error {
 	return row.StructScan(dest)
 }
 
-func (st *Sqlxt) All(dest interface{}) error {
+func (st *Builder) All(dest interface{}) error {
 	var err error
 	query, args, err := st.query.BuildQuery()
 	if err != nil {
@@ -68,27 +68,27 @@ func (st *Sqlxt) All(dest interface{}) error {
 	return err
 }
 
-func (st *Sqlxt) Update(data interface{}) (sql.Result, error) {
+func (st *Builder) Update(data interface{}) (sql.Result, error) {
 	return st.Exec("UPDATE", data)
 }
 
-func (st *Sqlxt) Insert(data interface{}) (sql.Result, error) {
+func (st *Builder) Insert(data interface{}) (sql.Result, error) {
 	return st.Exec("INSERT", data)
 }
 
-func (st *Sqlxt) InsertIgnore(data interface{}) (sql.Result, error) {
+func (st *Builder) InsertIgnore(data interface{}) (sql.Result, error) {
 	return st.Exec("INSERT_IGNORE", data)
 }
 
-func (st *Sqlxt) InsertOnDuplicateUpdate(data interface{}) (sql.Result, error) {
+func (st *Builder) InsertOnDuplicateUpdate(data interface{}) (sql.Result, error) {
 	return st.Exec("INSERT_ON_DUPLICATE_UPDATE", data)
 }
 
-func (st *Sqlxt) Delete() (sql.Result, error) {
+func (st *Builder) Delete() (sql.Result, error) {
 	return st.Exec("DELETE", nil)
 }
 
-func (st *Sqlxt) Exec(method string, s interface{}) (sql.Result, error) {
+func (st *Builder) Exec(method string, s interface{}) (sql.Result, error) {
 	var err error
 	query, args, err := st.query.BuildExec(method, StructToMap(s))
 	if err != nil {

@@ -1,4 +1,4 @@
-# sqlxt
+# sqlx-builder
 用于sqlx简化操作，仅完成基础的一些操作，之后想支持通过struct转table结构
 目前使用protobuf生成struct，感觉转table用处不大
 
@@ -62,15 +62,15 @@ if err != nil {
 ```
 
 ### 支持的函数及结构体
-* Sqlxt
+* Builder
 ```
-func New(*sqlx.DB, *Query, debug bool) *Sqlxt
-func NewTx(*sqlx.Tx, *Query, debug bool) *Sqlxt
-func (st *Sqlxt) Insert(data interface{}) error
-func (st *Sqlxt) Update(data interface{}) error
-func (st *Sqlxt) Delete() error
-func (st *Sqlxt) Get(dest interface{}) (sql.Result, error)
-func (st *Sqlxt) All(dest interface{}) (sql.Result, error)
+func New(*sqlx.DB, *Query, debug bool) *Builder
+func NewTx(*sqlx.Tx, *Query, debug bool) *Builder
+func (st *Builder) Insert(data interface{}) error
+func (st *Builder) Update(data interface{}) error
+func (st *Builder) Delete() error
+func (st *Builder) Get(dest interface{}) (sql.Result, error)
+func (st *Builder) All(dest interface{}) (sql.Result, error)
 ```
 * Query
 ```

@@ -1,4 +1,4 @@
-package sqlxt
+package sqlxb
 
 import (
 	"fmt"

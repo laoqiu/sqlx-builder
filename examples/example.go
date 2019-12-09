@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/laoqiu/sqlxt"
+	"github.com/laoqiu/sqlx-builder"
 )
 
 type Person struct {
