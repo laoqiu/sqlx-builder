@@ -13,6 +13,7 @@ import (
 func Connect(opts ...Option) (*sqlx.DB, error) {
 	o := NewOptions(opts...)
 	if o.Driver == "mysql" {
+		// [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]
 		o.URI = fmt.Sprintf("%s?charset=%s&parseTime=%v", o.URI, o.Charset, o.ParseTime)
 	}
 	db, err := sqlx.Connect(o.Driver, o.URI)
