@@ -1,4 +1,4 @@
-package sqlxb
+package builder
 
 import (
 	"errors"
@@ -21,14 +21,20 @@ type Query struct {
 	limit    int
 	offset   int
 	lock     string
+	comment  string
 }
 
-// Table 生成基本query并赋值builder
+// Table 生成基本query并赋值Query
 func (b *Builder) Table(tablename string) *Builder {
-	q := &Query{
+	b.query = &Query{
 		table: tablename,
 	}
-	b.query = q
+	return b
+}
+
+// Comment 加入sql注释
+func (b *Builder) Comment(v string) *Builder {
+	b.query.comment = fmt.Sprintf("/* %s */", v)
 	return b
 }
 
@@ -53,18 +59,6 @@ func (b *Builder) Fields(fields ...string) *Builder {
 // AddFields 添加新的返回字段
 func (b *Builder) AddFields(fields ...string) *Builder {
 	b.query.fields = append(b.query.fields, fields...)
-	return b
-}
-
-// Select 指向别名Fields
-func (b *Builder) Select(fields ...string) *Builder {
-	b.Fields(fields...)
-	return b
-}
-
-// AddSelect 指向别名AddFields
-func (b *Builder) AddSelect(fields ...string) *Builder {
-	b.AddFields(fields...)
 	return b
 }
 
@@ -174,87 +168,7 @@ func (b *Builder) _parseUpate(data map[string]interface{}) string {
 	return setstr
 }
 
-// BuildExec 返回需要执行的sql表达式
-func (b *Builder) BuildExec(method string, data map[string]interface{}) (string, []interface{}, error) {
-	var sqlstr string
-	var tablename string
-
-	tablename = b.query.table
-
-	where, args, err := b.parseWhere()
-	if err != nil {
-		return "", nil, err
-	}
-	where = If(where == "", "", "WHERE "+where).(string)
-
-	switch method {
-	case "INSERT", "INSERT_IGNORE":
-		keystr, valstr := b._parseInsert(data)
-		ignore := If(method == "INSERT_IGNORE", "IGNORE", "").(string)
-		sqlstr = fmt.Sprintf("INSERT %s INTO %s (%s) VALUES (%s)", ignore, tablename, keystr, valstr)
-	case "INSERT_ON_DUPLICATE_UPDATE":
-		keystr, valstr := b._parseInsert(data)
-		setstr := b._parseUpate(data)
-		sqlstr = fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s", tablename, keystr, valstr, setstr)
-	case "UPDATE":
-		setstr := b._parseUpate(data)
-		sqlstr = fmt.Sprintf("UPDATE %s SET %s %s", tablename, setstr, where)
-	case "DELETE":
-		sqlstr = fmt.Sprintf("DELETE FROM %s %s", tablename, where)
-	}
-	//log.Println("sql output ->", sqlstr)
-	return sqlstr, args, nil
-}
-
-// BuildQuery 合并query表达式
-func (b *Builder) BuildQuery() (string, []interface{}, error) {
-	// table
-	table := DefaultMapper(b.query.table)
-	// join
-	join, joinTables, err := b.parseJoin()
-	if err != nil {
-		return "", nil, err
-	}
-	// distinct
-	distinct := If(b.query.distinct, "DISTINCT", "").(string)
-	// fields
-	var allFields string
-	if len(joinTables) == 0 {
-		allFields = "*"
-	} else {
-		_t := []string{table + ".*"}
-		for _, i := range joinTables {
-			_t = append(_t, i+".*")
-		}
-		allFields = strings.Join(_t, ", ")
-	}
-	fields := If(len(b.query.fields) == 0, allFields, strings.Join(b.query.fields, ",")).(string)
-	// where
-	where, args, err := b.parseWhere()
-	if err != nil {
-		return "", nil, err
-	}
-	// where
-	where = If(where == "", "", "WHERE "+where).(string)
-	// group
-	group := If(b.query.group == "", "", "GROUP BY "+b.query.group).(string)
-	// order
-	order := If(b.query.order == "", "", "ORDER BY "+b.query.order).(string)
-	// having
-	having := If(b.query.having == "", "", " HAVING "+b.query.having).(string)
-	// limit
-	limit := If(b.query.limit == 0, "", fmt.Sprintf("LIMIT %d", b.query.limit)).(string)
-	// offset
-	offset := If(b.query.offset == 0, "", fmt.Sprintf("OFFSET %d", b.query.offset)).(string)
-	// 组合
-	sqlstr := strings.Join(Filter([]string{
-		"SELECT", distinct, fields, "FROM", table, join, where, group, having, order, limit, offset, b.query.lock},
-		func(x string) bool { return x != "" }), " ")
-	// log.Println("sql output ->", sqlstr)
-	return sqlstr, args, nil
-}
-
-func (b *Builder) parseJoin() (string, []string, error) {
+func (b *Builder) _parseJoin() (string, []string, error) {
 	var result []string
 	var joinTables []string
 	for _, join := range b.query.join {
@@ -284,7 +198,7 @@ func (b *Builder) parseJoin() (string, []string, error) {
 	return strings.Join(result, " "), joinTables, nil
 }
 
-func (b *Builder) parseWhere() (string, []interface{}, error) {
+func (b *Builder) _parseWhere() (string, []interface{}, error) {
 	var result []string
 	var args []interface{}
 	for _, where := range b.query.where {
@@ -316,4 +230,83 @@ func (b *Builder) parseWhere() (string, []interface{}, error) {
 	}
 	wherestring := strings.Trim(strings.TrimLeft(strings.TrimLeft(strings.Join(result, " "), "AND"), "OR"), " ")
 	return wherestring, args, nil
+}
+
+// BuildExec 返回需要执行的sql表达式
+func (b *Builder) BuildExec(method string, data map[string]interface{}) (string, []interface{}, error) {
+	var sqlstr string
+	var tablename string
+
+	tablename = b.query.table
+
+	where, args, err := b._parseWhere()
+	if err != nil {
+		return "", nil, err
+	}
+	where = If(where == "", "", "WHERE "+where).(string)
+
+	switch method {
+	case "INSERT", "INSERT_IGNORE":
+		keystr, valstr := b._parseInsert(data)
+		ignore := If(method == "INSERT_IGNORE", "IGNORE", "").(string)
+		sqlstr = fmt.Sprintf("INSERT %s %s INTO %s (%s) VALUES (%s)", b.query.comment, ignore, tablename, keystr, valstr)
+	case "INSERT_ON_DUPLICATE_UPDATE":
+		keystr, valstr := b._parseInsert(data)
+		setstr := b._parseUpate(data)
+		sqlstr = fmt.Sprintf("INSERT %s INTO %s (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s", b.query.comment, tablename, keystr, valstr, setstr)
+	case "UPDATE":
+		setstr := b._parseUpate(data)
+		sqlstr = fmt.Sprintf("UPDATE %s %s SET %s %s", b.query.comment, tablename, setstr, where)
+	case "DELETE":
+		sqlstr = fmt.Sprintf("DELETE %s FROM %s %s", b.query.comment, tablename, where)
+	}
+	//log.Println("sql output ->", sqlstr)
+	return sqlstr, args, nil
+}
+
+// BuildQuery 合并query表达式
+func (b *Builder) BuildQuery() (string, []interface{}, error) {
+	// table
+	table := DefaultMapper(b.query.table)
+	// join
+	join, joinTables, err := b._parseJoin()
+	if err != nil {
+		return "", nil, err
+	}
+	// distinct
+	distinct := If(b.query.distinct, "DISTINCT", "").(string)
+	// fields
+	var allFields string
+	if len(joinTables) == 0 {
+		allFields = "*"
+	} else {
+		_t := []string{table + ".*"}
+		for _, i := range joinTables {
+			_t = append(_t, i+".*")
+		}
+		allFields = strings.Join(_t, ", ")
+	}
+	fields := If(len(b.query.fields) == 0, allFields, strings.Join(b.query.fields, ",")).(string)
+	// where
+	where, args, err := b._parseWhere()
+	if err != nil {
+		return "", nil, err
+	}
+	// where
+	where = If(where == "", "", "WHERE "+where).(string)
+	// group
+	group := If(b.query.group == "", "", "GROUP BY "+b.query.group).(string)
+	// order
+	order := If(b.query.order == "", "", "ORDER BY "+b.query.order).(string)
+	// having
+	having := If(b.query.having == "", "", " HAVING "+b.query.having).(string)
+	// limit
+	limit := If(b.query.limit == 0, "", fmt.Sprintf("LIMIT %d", b.query.limit)).(string)
+	// offset
+	offset := If(b.query.offset == 0, "", fmt.Sprintf("OFFSET %d", b.query.offset)).(string)
+	// 组合
+	sqlstr := strings.Join(Filter([]string{
+		"SELECT", b.query.comment, distinct, fields, "FROM", table, join, where, group, having, order, limit, offset, b.query.lock},
+		func(x string) bool { return x != "" }), " ")
+	return sqlstr, args, nil
 }

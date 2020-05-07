@@ -1,4 +1,4 @@
-package sqlxb
+package builder
 
 import (
 	"fmt"

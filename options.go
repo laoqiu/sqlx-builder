@@ -1,4 +1,4 @@
-package sqlxb
+package builder
 
 var (
 	// DefaultDriver 数据库引擎, 默认sqlite3
