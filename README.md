@@ -1,47 +1,23 @@
 # sqlx-builder
-用于sqlx简化操作，仅完成基础的一些操作，之后想支持通过struct转table结构
-目前使用protobuf生成struct，感觉转table用处不大
-
-不使用sqlx的可以去看 gorose
-更多struct功能的可以去看 structable
+用于实现sqlx的链式操作
 
 ## 安装
 ```
-go get github.com/laoqiu/sqlxt
+go get github.com/laoqiu/sqlx-builder
 ```
 
-### 初始化Init函数，允许传入option (在获取flag时更新db的参数)
+### 初始化
 
 ```
-file: db.go
-var (
-	db *sqlx.DB
+import (
+	sqlxb "github.com/laoqiu/sqlx-builder"
 )
-
-func Init(opts ...sqlxt.Option) error {
-	o := sqlxt.NewOptions(opts...)
-	db, err := sqlxt.Connect(o.Driver, o.URI, o.Charset, o.ParseTime, o.MaxClient, o.MaxClient)
-	if err != nil {
-		return err
-	}
-	// 加载mapper
-	sqlxt.LoadMapper(db, sqlxt.DefaultMapper)
-	return nil
+db, err := sqlxb.Connect()
+if err != nil {
+	return err
 }
-
-file: main.go
-func main() {
-	dbOpts := []sqlxt.Option{}
-	service := micro.NewService(
-        ...
-	dbOpts = append(dbOpts, sqlxt.URI(c.String("database_url")))
-	...
-	)
-	// db init
-	if err := db.Init(dbOpts...); err != nil {
-		log.Fatal(err)
-	}
-}
+// 加载mapper
+builder.LoadMapper(db, sqlxb.DefaultMapper)
 ```
 
 ### 支持的链式操作
@@ -51,11 +27,11 @@ p := map[string]interface{}{
     "phone": "13012345678",
 }
 debug := true
-query = sqlxt.Table("tablename").Join("table2", "table2.id = table1.t_id").
+query = sqlxb.Table("tablename").Join("table2", "table2.id = table1.t_id").
     Where("name like ?", "%name%").
     Where("address = ?", "test").
     Where("phone = :phone", p)
-err := sqlxt.New(db, query, debug).First(dest)
+err := sqlxb.New(db, query, debug).First(dest)
 if err != nil {
     log.Println(err) 
 }
