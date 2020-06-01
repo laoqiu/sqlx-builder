@@ -63,19 +63,19 @@ func main() {
 		ID:   1,
 		Name: "test",
 	}
-	result, err := sqlxb.New(db).Debug(true).Table("person").Insert(person)
+	result, err := sqlxb.NewBuilder(db).Debug(true).Table("person").Insert(person)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println(result)
 
-	if err := sqlxb.New(db).Debug(true).Table("person").Distinct().Get(person); err != nil {
+	if err := sqlxb.NewBuilder(db).Debug(true).Table("person").Distinct().One(person); err != nil {
 		log.Fatal(err)
 	}
 
 	// 链式操作
 	data := []PersonPlace{}
-	if err := sqlxb.New(db).Debug(true).Table("person").Join("place", "person.id = place.person_id").
+	if err := sqlxb.NewBuilder(db).Debug(true).Table("person").Join("place", "person.id = place.person_id").
 		Fields("person.id", "person.name", "person.info", "place.address").
 		Where("person.name = ?", person.Name).
 		All(&data); err != nil {
