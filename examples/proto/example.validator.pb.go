@@ -7,8 +7,6 @@ import (
 	fmt "fmt"
 	math "math"
 	proto "github.com/golang/protobuf/proto"
-	_ "github.com/golang/protobuf/ptypes/timestamp"
-	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -17,10 +15,5 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 func (this *Person) Validate() error {
-	if this.CreateAt != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.CreateAt); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("CreateAt", err)
-		}
-	}
 	return nil
 }

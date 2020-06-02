@@ -44,6 +44,12 @@ func NewBuilder(db *sqlx.DB) *Builder {
 	return &Builder{db: db, tx: nil, query: nil}
 }
 
+// Unsafe Scan Destination Safety
+func (b *Builder) Unsafe() *Builder {
+	b.db = b.db.Unsafe()
+	return b
+}
+
 // SetTx 事务支持，如果传nil则退出事务
 func (b *Builder) SetTx(tx *sqlx.Tx) *Builder {
 	b.tx = tx

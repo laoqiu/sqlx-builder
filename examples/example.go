@@ -1,22 +1,12 @@
 package main
 
 import (
-	"database/sql"
 	"log"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	sqlxb "github.com/laoqiu/sqlx-builder"
 	ex "github.com/laoqiu/sqlx-builder/examples/proto"
 )
-
-// Person 用户对象
-type Person struct {
-	ID      int64          `json:"id"`
-	Name    string         `json:"name"`
-	Info    sql.NullString `json:"info"`
-	Created *time.Time     `json:"created"`
-}
 
 func main() {
 	db, err := sqlxb.Connect(
@@ -26,6 +16,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	sqlxb.LoadMapper(db, sqlxb.DefaultMapper)
 
 	schemas := []string{
 		`
@@ -45,14 +36,15 @@ func main() {
 
 	person := &ex.Person{Name: "test name 1"}
 
-	// result, err := sqlxb.NewBuilder(db).Debug(true).Table("person").Insert(person)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// log.Println(result)
-
-	err = sqlxb.NewBuilder(db).Debug(true).Table("person").One(person)
+	result, err := sqlxb.NewBuilder(db).Debug(true).Table("person").Insert(person)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println(result)
+
+	err = sqlxb.NewBuilder(db).Unsafe().Debug(true).Table("person").Fields("id", "name", "create_at").One(person)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(person)
 }
