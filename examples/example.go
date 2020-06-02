@@ -5,8 +5,9 @@ import (
 	"log"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
 	sqlxb "github.com/laoqiu/sqlx-builder"
-	_ "github.com/mattn/go-sqlite3"
+	ex "github.com/laoqiu/sqlx-builder/examples/proto"
 )
 
 // Person 用户对象
@@ -17,39 +18,22 @@ type Person struct {
 	Created *time.Time     `json:"created"`
 }
 
-type Place struct {
-	PersonID int64  `json:"person_id"`
-	Address  string `json:"address"`
-}
-
-type PersonPlace struct {
-	Person
-	Place
-}
-
 func main() {
 	db, err := sqlxb.Connect(
-	// sqlxb.Charset("utf8"),
-	// sqlxb.Driver("mysql"),
-	// sqlxb.URI("user:password@tcp(127.0.0.1:3306)/hello"),
+		sqlxb.Driver("mysql"),
+		sqlxb.URI("root:123456@tcp(127.0.0.1:3306)/my_app"),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	schemas := []string{
-		`CREATE TABLE IF NOT EXISTS person (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name VARCHAR(20) NOT NULL,
-			info VARCHAR(100) DEFAULT '',
-			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-		`,
-		`CREATE TABLE IF NOT EXISTS place (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			person_id INTEGER NOT NULL,
-			address VARCHAR(100) DEFAULT '',
-			country TEXT DEFAULT '',
-			city TEXT DEFAULT '');
+		`
+		CREATE TABLE IF NOT EXISTS my_app.person (
+			id INT NOT NULL AUTO_INCREMENT,
+			name VARCHAR(45) NULL,
+			create_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id));
 		`,
 	}
 
@@ -59,27 +43,16 @@ func main() {
 		}
 	}
 
-	person := &Person{
-		ID:   1,
-		Name: "test",
-	}
-	result, err := sqlxb.New(db).Debug(true).Table("person").Insert(person)
+	person := &ex.Person{Name: "test name 1"}
+
+	// result, err := sqlxb.NewBuilder(db).Debug(true).Table("person").Insert(person)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// log.Println(result)
+
+	err = sqlxb.NewBuilder(db).Debug(true).Table("person").One(person)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(result)
-
-	if err := sqlxb.New(db).Debug(true).Table("person").Distinct().Get(person); err != nil {
-		log.Fatal(err)
-	}
-
-	// 链式操作
-	data := []PersonPlace{}
-	if err := sqlxb.New(db).Debug(true).Table("person").Join("place", "person.id = place.person_id").
-		Fields("person.id", "person.name", "person.info", "place.address").
-		Where("person.name = ?", person.Name).
-		All(&data); err != nil {
-		log.Fatal(err)
-	}
-	log.Println(data)
 }
