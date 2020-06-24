@@ -3,20 +3,18 @@ package builder
 import (
 	"fmt"
 	"testing"
+
+	"github.com/antlabs/deepcopy"
 )
 
-type City struct {
-	name string
-}
-type Address struct {
-	c *City
-}
-
-func TestStructToMap(t *testing.T) {
-	addr := &Address{}
-	fmt.Println(addr.c == nil)
-	m := StructToMap(addr.c)
-	if len(m) != 0 {
-		t.Error("错误")
+func TestCopy(t *testing.T) {
+	q1 := &Query{}
+	q2 := &Query{
+		Fields: []string{"1", "2", "3"},
+	}
+	deepcopy.Copy(q1, q2).Do()
+	fmt.Println(q1.Fields)
+	if len(q1.Fields) != 3 {
+		t.Error("copy is not valid")
 	}
 }

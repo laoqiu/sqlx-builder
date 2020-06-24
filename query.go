@@ -5,120 +5,132 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/antlabs/deepcopy"
 	"github.com/jmoiron/sqlx"
 )
 
 // Query 返回sql语句主体
 type Query struct {
-	table    string
-	fields   []string
-	join     [][]interface{}
-	where    [][]interface{}
-	distinct bool
-	order    string
-	group    string
-	having   string
-	limit    int
-	offset   int
-	lock     string
-	comment  string
+	Table    string
+	Fields   []string
+	Join     [][]interface{}
+	Where    [][]interface{}
+	Distinct bool
+	Order    string
+	Group    string
+	Having   string
+	Limit    int
+	Offset   int
+	Lock     string
+	Comment  string
 }
 
 // Table 生成基本query并赋值Query
 func (b *Builder) Table(tablename string) *Builder {
 	b.query = &Query{
-		table: tablename,
+		Table: tablename,
 	}
 	return b
 }
 
+// Copy 复制
+func (b *Builder) Copy() *Builder {
+	cp := &Builder{
+		db:    b.db,
+		tx:    b.tx,
+		debug: b.debug,
+	}
+	deepcopy.Copy(cp.query, b.query).Do()
+	return cp
+}
+
 // Comment 加入sql注释
 func (b *Builder) Comment(v string) *Builder {
-	b.query.comment = fmt.Sprintf("/* %s */", v)
+	b.query.Comment = fmt.Sprintf("/* %s */", v)
 	return b
 }
 
 // LockInShareMode 共享锁
 func (b *Builder) LockInShareMode() *Builder {
-	b.query.lock = "LOCK IN SHARE MODE"
+	b.query.Lock = "LOCK IN SHARE MODE"
 	return b
 }
 
 // LockForUpdate 写锁
 func (b *Builder) LockForUpdate() *Builder {
-	b.query.lock = "FOR UPDATE"
+	b.query.Lock = "FOR UPDATE"
 	return b
 }
 
 // Fields 定义返回字段
 func (b *Builder) Fields(fields ...string) *Builder {
-	b.query.fields = fields
+	b.query.Fields = fields
 	return b
 }
 
 // AddFields 添加新的返回字段
 func (b *Builder) AddFields(fields ...string) *Builder {
-	b.query.fields = append(b.query.fields, fields...)
+	b.query.Fields = append(b.query.Fields, fields...)
 	return b
 }
 
 // Join 赋值多表关联join表达式
 func (b *Builder) Join(table ...interface{}) *Builder {
-	b.query.join = append(b.query.join, []interface{}{"INNER JOIN", table})
+	b.query.Join = append(b.query.Join, []interface{}{"INNER JOIN", table})
 	return b
 }
 
 // LeftJoin 多表关联leftjoin表达式
 func (b *Builder) LeftJoin(table ...interface{}) *Builder {
-	b.query.join = append(b.query.join, []interface{}{"LEFT JOIN", table})
+	b.query.Join = append(b.query.Join, []interface{}{"LEFT JOIN", table})
 	return b
 }
 
 // RightJoin 多表关联rightjoin表达式
 func (b *Builder) RightJoin(table ...interface{}) *Builder {
-	b.query.join = append(b.query.join, []interface{}{"RIGHT JOIN", table})
+	b.query.Join = append(b.query.Join, []interface{}{"RIGHT JOIN", table})
 	return b
 }
 
 // UnionJoin 联合查询union join表达式
 func (b *Builder) UnionJoin(table ...interface{}) *Builder {
-	b.query.join = append(b.query.join, []interface{}{"UNION JOIN", table})
+	b.query.Join = append(b.query.Join, []interface{}{"UNION JOIN", table})
 	return b
 }
 
 // Where 条件查询
 func (b *Builder) Where(query string, args ...interface{}) *Builder {
-	b.query.where = append(b.query.where, []interface{}{"AND", query, args})
+	b.query.Where = append(b.query.Where, []interface{}{"AND", query, args})
 	return b
 }
 
 // GroupBy 分组查询
 func (b *Builder) GroupBy(group string) *Builder {
-	b.query.group = group
+	b.query.Group = group
 	return b
 }
 
 // OrderBy 排序
 func (b *Builder) OrderBy(order string) *Builder {
-	b.query.order = order
+	b.query.Order = order
 	return b
 }
 
 // Distinct 去重
 func (b *Builder) Distinct() *Builder {
-	b.query.distinct = true
+	b.query.Distinct = true
 	return b
 }
 
 // Limit set limit number
 func (b *Builder) Limit(n int) *Builder {
-	b.query.limit = n
+	b.query.Limit = n
 	return b
 }
 
 // Offset set offset number
 func (b *Builder) Offset(n int) *Builder {
-	b.query.offset = n
+	b.query.Offset = n
 	return b
 }
 
@@ -126,7 +138,7 @@ func (b *Builder) _parseInsert(data map[string]interface{}) (string, string) {
 	var keystr, valstr string
 	var key, val []string
 	for k, v := range data {
-		if len(b.query.fields) == 0 || indexOf(k, b.query.fields) != -1 {
+		if len(b.query.Fields) == 0 || indexOf(k, b.query.Fields) != -1 {
 			// 反射找出类型
 			switch v.(type) {
 			case string:
@@ -149,7 +161,7 @@ func (b *Builder) _parseUpate(data map[string]interface{}) string {
 	var result []string
 
 	for k, v := range data {
-		if len(b.query.fields) == 0 || indexOf(k, b.query.fields) != -1 {
+		if len(b.query.Fields) == 0 || indexOf(k, b.query.Fields) != -1 {
 			var _value string
 			// 反射找出类型
 			switch v.(type) {
@@ -171,7 +183,7 @@ func (b *Builder) _parseUpate(data map[string]interface{}) string {
 func (b *Builder) _parseJoin() (string, []string, error) {
 	var result []string
 	var joinTables []string
-	for _, join := range b.query.join {
+	for _, join := range b.query.Join {
 		var w string
 		var ok bool
 		var args []interface{}
@@ -201,7 +213,7 @@ func (b *Builder) _parseJoin() (string, []string, error) {
 func (b *Builder) _parseWhere() (string, []interface{}, error) {
 	var result []string
 	var args []interface{}
-	for _, where := range b.query.where {
+	for _, where := range b.query.Where {
 		var ok bool
 		var wargs []interface{}
 		sp := where[0].(string)
@@ -237,7 +249,7 @@ func (b *Builder) BuildExec(method string, data map[string]interface{}) (string,
 	var sqlstr string
 	var tablename string
 
-	tablename = b.query.table
+	tablename = b.query.Table
 
 	where, args, err := b._parseWhere()
 	if err != nil {
@@ -249,16 +261,16 @@ func (b *Builder) BuildExec(method string, data map[string]interface{}) (string,
 	case "INSERT", "INSERT_IGNORE":
 		keystr, valstr := b._parseInsert(data)
 		ignore := If(method == "INSERT_IGNORE", "IGNORE", "").(string)
-		sqlstr = fmt.Sprintf("INSERT %s %s INTO %s (%s) VALUES (%s)", b.query.comment, ignore, tablename, keystr, valstr)
+		sqlstr = fmt.Sprintf("INSERT %s %s INTO %s (%s) VALUES (%s)", b.query.Comment, ignore, tablename, keystr, valstr)
 	case "INSERT_ON_DUPLICATE_UPDATE":
 		keystr, valstr := b._parseInsert(data)
 		setstr := b._parseUpate(data)
-		sqlstr = fmt.Sprintf("INSERT %s INTO %s (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s", b.query.comment, tablename, keystr, valstr, setstr)
+		sqlstr = fmt.Sprintf("INSERT %s INTO %s (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s", b.query.Comment, tablename, keystr, valstr, setstr)
 	case "UPDATE":
 		setstr := b._parseUpate(data)
-		sqlstr = fmt.Sprintf("UPDATE %s %s SET %s %s", b.query.comment, tablename, setstr, where)
+		sqlstr = fmt.Sprintf("UPDATE %s %s SET %s %s", b.query.Comment, tablename, setstr, where)
 	case "DELETE":
-		sqlstr = fmt.Sprintf("DELETE %s FROM %s %s", b.query.comment, tablename, where)
+		sqlstr = fmt.Sprintf("DELETE %s FROM %s %s", b.query.Comment, tablename, where)
 	}
 	//log.Println("sql output ->", sqlstr)
 	return sqlstr, args, nil
@@ -267,14 +279,14 @@ func (b *Builder) BuildExec(method string, data map[string]interface{}) (string,
 // BuildQuery 合并query表达式
 func (b *Builder) BuildQuery() (string, []interface{}, error) {
 	// table
-	table := DefaultMapper(b.query.table)
+	table := DefaultMapper(b.query.Table)
 	// join
 	join, joinTables, err := b._parseJoin()
 	if err != nil {
 		return "", nil, err
 	}
 	// distinct
-	distinct := If(b.query.distinct, "DISTINCT", "").(string)
+	distinct := If(b.query.Distinct, "DISTINCT", "").(string)
 	// fields
 	var allFields string
 	if len(joinTables) == 0 {
@@ -286,7 +298,7 @@ func (b *Builder) BuildQuery() (string, []interface{}, error) {
 		}
 		allFields = strings.Join(_t, ", ")
 	}
-	fields := If(len(b.query.fields) == 0, allFields, strings.Join(b.query.fields, ",")).(string)
+	fields := If(len(b.query.Fields) == 0, allFields, strings.Join(b.query.Fields, ",")).(string)
 	// where
 	where, args, err := b._parseWhere()
 	if err != nil {
@@ -295,18 +307,18 @@ func (b *Builder) BuildQuery() (string, []interface{}, error) {
 	// where
 	where = If(where == "", "", "WHERE "+where).(string)
 	// group
-	group := If(b.query.group == "", "", "GROUP BY "+b.query.group).(string)
+	group := If(b.query.Group == "", "", "GROUP BY "+b.query.Group).(string)
 	// order
-	order := If(b.query.order == "", "", "ORDER BY "+b.query.order).(string)
+	order := If(b.query.Order == "", "", "ORDER BY "+b.query.Order).(string)
 	// having
-	having := If(b.query.having == "", "", " HAVING "+b.query.having).(string)
+	having := If(b.query.Having == "", "", " HAVING "+b.query.Having).(string)
 	// limit
-	limit := If(b.query.limit == 0, "", fmt.Sprintf("LIMIT %d", b.query.limit)).(string)
+	limit := If(b.query.Limit == 0, "", fmt.Sprintf("LIMIT %d", b.query.Limit)).(string)
 	// offset
-	offset := If(b.query.offset == 0, "", fmt.Sprintf("OFFSET %d", b.query.offset)).(string)
+	offset := If(b.query.Offset == 0, "", fmt.Sprintf("OFFSET %d", b.query.Offset)).(string)
 	// 组合
 	sqlstr := strings.Join(Filter([]string{
-		"SELECT", b.query.comment, distinct, fields, "FROM", table, join, where, group, having, order, limit, offset, b.query.lock},
+		"SELECT", b.query.Comment, distinct, fields, "FROM", table, join, where, group, having, order, limit, offset, b.query.Lock},
 		func(x string) bool { return x != "" }), " ")
 	return sqlstr, args, nil
 }
