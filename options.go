@@ -4,7 +4,7 @@ var (
 	// DefaultDriver 数据库引擎, 默认sqlite3
 	DefaultDriver = "sqlite3"
 	// DefaultURI 数据连接, 默认:memory:
-	// mysql driver: [username[:password]@][protocol[(address)]]/dbname
+	// mysql uri: [username[:password]@][protocol[(address)]]/dbname
 	DefaultURI = ":memory:"
 	// DefaultCharset 字符集，默认utf8mb4，仅支持mysql
 	DefaultCharset = "utf8mb4"
