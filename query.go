@@ -140,13 +140,12 @@ func (b *Builder) _parseInsert(data map[string]interface{}) (string, string) {
 	var key, val []string
 	for k, v := range data {
 		if len(b.query.Fields) == 0 || indexOf(k, b.query.Fields) != -1 {
+			key = append(key, "`"+k+"`")
 			// 反射找出类型
 			switch v.(type) {
 			case string:
-				key = append(key, k)
 				val = append(val, fmt.Sprintf("'%s'", v))
 			case int, int8, int32, int64, float32, float64, bool:
-				key = append(key, k)
 				val = append(val, fmt.Sprintf("%v", v))
 			default:
 			}
@@ -167,11 +166,11 @@ func (b *Builder) _parseUpate(data map[string]interface{}) string {
 			// 反射找出类型
 			switch v.(type) {
 			case int, int32, int64:
-				_value = fmt.Sprintf("%s = %d", k, v)
+				_value = fmt.Sprintf("`%s` = %d", k, v)
 			case float32, float64:
-				_value = fmt.Sprintf("%s = %f", k, v)
+				_value = fmt.Sprintf("`%s` = %f", k, v)
 			default:
-				_value = fmt.Sprintf("%s = '%s'", k, v)
+				_value = fmt.Sprintf("`%s` = '%s'", k, v)
 			}
 			result = append(result, _value)
 		}
