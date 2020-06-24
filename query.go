@@ -39,6 +39,7 @@ func (b *Builder) Copy() *Builder {
 		db:    b.db,
 		tx:    b.tx,
 		debug: b.debug,
+		query: &Query{},
 	}
 	deepcopy.Copy(cp.query, b.query).Do()
 	return cp
