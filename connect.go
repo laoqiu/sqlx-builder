@@ -23,6 +23,7 @@ func Connect(opts ...Option) (*sqlx.DB, error) {
 	// 配置连接池
 	db.SetMaxOpenConns(o.MaxClient)
 	db.SetMaxIdleConns(o.MaxClient)
+	db.SetConnMaxLifetime(o.MaxLifetime)
 	return db, nil
 }
 

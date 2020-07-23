@@ -1,5 +1,7 @@
 package builder
 
+import "time"
+
 var (
 	// DefaultDriver 数据库引擎, 默认sqlite3
 	DefaultDriver = "sqlite3"
@@ -12,15 +14,18 @@ var (
 	DefaultParseTime = true
 	// DefaultMaxClient 最大客户端连接数，默认为10
 	DefaultMaxClient = 10
+	// DefaultMaxLifetime 默认空闲超时时间
+	DefaultMaxLifetime = time.Minute * 10
 )
 
 // Options 连接池参数集
 type Options struct {
-	Driver    string
-	URI       string
-	Charset   string
-	ParseTime bool
-	MaxClient int
+	Driver      string
+	URI         string
+	Charset     string
+	ParseTime   bool
+	MaxClient   int
+	MaxLifetime time.Duration
 }
 
 // Option 参数函数
@@ -29,11 +34,12 @@ type Option func(o *Options)
 // NewOptions 返回一个新的参数集
 func NewOptions(opts ...Option) Options {
 	opt := Options{
-		Driver:    DefaultDriver,
-		URI:       DefaultURI,
-		Charset:   DefaultCharset,
-		ParseTime: DefaultParseTime,
-		MaxClient: DefaultMaxClient,
+		Driver:      DefaultDriver,
+		URI:         DefaultURI,
+		Charset:     DefaultCharset,
+		ParseTime:   DefaultParseTime,
+		MaxClient:   DefaultMaxClient,
+		MaxLifetime: DefaultMaxLifetime,
 	}
 
 	for _, o := range opts {
@@ -75,5 +81,12 @@ func ParseTime(v bool) Option {
 func MaxClient(v int) Option {
 	return func(o *Options) {
 		o.MaxClient = v
+	}
+}
+
+// MaxLifetime 设置连接空闲超时时间
+func MaxLifetime(d time.Duration) Option {
+	return func(o *Options) {
+		o.MaxLifetime = d
 	}
 }
