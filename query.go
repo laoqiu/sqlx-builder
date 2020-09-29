@@ -143,11 +143,10 @@ func (b *Builder) _parseInsert(data map[string]interface{}) (string, string) {
 			key = append(key, "`"+k+"`")
 			// 反射找出类型
 			switch v.(type) {
-			case string:
-				val = append(val, fmt.Sprintf("'%s'", v))
 			case int, int8, int32, int64, float32, float64, bool:
 				val = append(val, fmt.Sprintf("%v", v))
 			default:
+				val = append(val, fmt.Sprintf("'%s'", v))
 			}
 		}
 	}
@@ -165,10 +164,8 @@ func (b *Builder) _parseUpate(data map[string]interface{}) string {
 			var _value string
 			// 反射找出类型
 			switch v.(type) {
-			case int, int32, int64:
-				_value = fmt.Sprintf("`%s` = %d", k, v)
-			case float32, float64:
-				_value = fmt.Sprintf("`%s` = %f", k, v)
+			case int, int8, int32, int64, float32, float64, bool:
+				_value = fmt.Sprintf("`%s` = %v", k, v)
 			default:
 				_value = fmt.Sprintf("`%s` = '%s'", k, v)
 			}
