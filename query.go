@@ -11,18 +11,19 @@ import (
 
 // Query 返回sql语句主体
 type Query struct {
-	Table    string
-	Fields   []string
-	Join     [][]interface{}
-	Where    [][]interface{}
-	Distinct bool
-	Order    string
-	Group    string
-	Having   string
-	Limit    int
-	Offset   int
-	Lock     string
-	Comment  string
+	Table        string
+	Fields       []string
+	IgnoreFields []string
+	Join         [][]interface{}
+	Where        [][]interface{}
+	Distinct     bool
+	Order        string
+	Group        string
+	Having       string
+	Limit        int
+	Offset       int
+	Lock         string
+	Comment      string
 }
 
 // Table 生成基本query并赋值Query
@@ -66,6 +67,12 @@ func (b *Builder) LockForUpdate() *Builder {
 // Fields 定义返回字段
 func (b *Builder) Fields(fields ...string) *Builder {
 	b.query.Fields = fields
+	return b
+}
+
+// IgnoreFields 忽略关键字段(如id)
+func (b *Builder) IgnoreFields(fields ...string) *Builder {
+	b.query.IgnoreFields = fields
 	return b
 }
 

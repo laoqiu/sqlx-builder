@@ -84,12 +84,15 @@ func LoadMapper(db *sqlx.DB, mapper func(name string) string) {
 }
 
 // StructToMap struct转map
-func StructToMap(i interface{}) map[string]interface{} {
+func StructToMap(i interface{}, ignoreFields []string) map[string]interface{} {
 	values := make(map[string]interface{})
 	iVal := reflect.ValueOf(i).Elem()
 	tp := iVal.Type()
 	for i := 0; i < iVal.NumField(); i++ {
 		tag := tp.Field(i).Tag.Get("json")
+		if indexOf(tag, ignoreFields) != -1 {
+			continue
+		}
 		if len(tag) > 0 {
 			name := strings.Split(tag, ",")[0]
 			if name != "-" {

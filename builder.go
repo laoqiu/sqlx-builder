@@ -122,7 +122,7 @@ func (b *Builder) Delete() (sql.Result, error) {
 // _exec 执行sql语句
 func (b *Builder) _exec(method string, s interface{}) (sql.Result, error) {
 	var err error
-	query, args, err := b.BuildExec(method, StructToMap(s))
+	query, args, err := b.BuildExec(method, StructToMap(s, b.query.IgnoreFields))
 	if err != nil {
 		return nil, err
 	}
